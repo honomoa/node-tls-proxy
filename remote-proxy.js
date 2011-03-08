@@ -47,8 +47,8 @@ process.on('uncaughtException', function (err) {
 });
 
 var https_options = {
-	key: fs.readFileSync('../openSSL_keys/ryans-key.pem'), 
-	cert: fs.readFileSync('../openSSL_keys/ryans-cert.pem')
+	key: fs.readFileSync('./openSSL_keys/ryans-key.pem'), 
+	cert: fs.readFileSync('./openSSL_keys/ryans-cert.pem')
 };
 
 https.createServer(https_options, function (req, res) {
