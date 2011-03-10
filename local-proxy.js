@@ -41,7 +41,6 @@ function hitch(obj, proc) {
 	};
 }
 
-
 process.on('uncaughtException', function (err) {
 	console.log('(un)Caught exception: ' + err);
 });
@@ -65,8 +64,8 @@ http.createServer(function (req, res) {
 
 	// Reject the request if it is anything other than http://
 	if (u.protocol != "http:") {
-		res.writeHead(503, "This proxy serves only HTTP");
-		res.write("503 This proxy serves only HTTP. You tried: " + u.protocol);
+		res.writeHead(503, "This proxy serves only HTTP requests");
+		res.write("503 This proxy serves only HTTP requests. You tried: " + u.protocol);
 		res.end();
 		return;
 	}
@@ -83,18 +82,13 @@ http.createServer(function (req, res) {
 
 		res.writeHead(remote.statusCode, rheaders);
 
-		remote.on('data', function(d) {
-			// console.log("D:", d.toString());
-			res.write(d);
-		})
-		.on('end', function() {
-			console.log("Response end");
-			res.end();
-		})
-		.on('error', function() {
+		// Pipe all data from source to destination
+		remote.pipe(res);
+
+		remote.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
-			// Don't forget to end the server's response stream
-			res.end();
+			// Don't forget to destroy the server's response stream
+			res.destroy();
 		});
 	});
 
@@ -104,17 +98,24 @@ http.createServer(function (req, res) {
 		res.end();
 	});
 
+	// Prevent cross domain referer leakage
+	if (headers.referer) {
+		var ru = url.parse(headers.referer);
+		if (ru.hostname != u.hostname) {
+			headers.referer = u.protocol + "//" + u.hostname + "/";
+		}
+	}
+
 	// Write out the headers
 	map_hash(headers, hitch(rreq, rreq.setHeader));
 
-	req.on('data', function(d) {
-		rreq.write(d);
-	})
-	.on('end', function() {
-		console.log("Request end");
-		// End the remote request as well
-		rreq.end();
+	// Pipe the result from the remote proxy to the client
+	req.pipe(rreq);
+
+	// Destroy the stream on error
+	req.on('error', function() {
+		console.log("Error sending data to client:", arguments);
+		res.destroy();
 	});
 
 }).listen(8080);
-
