@@ -82,7 +82,7 @@ http.createServer(function (req, res) {
 
 		res.writeHead(remote.statusCode, rheaders);
 
-		// Pipe all data from source to destination
+		// Pipe all data from source (remote) to destination (res)
 		remote.pipe(res);
 
 		remote.on('error', function() {
@@ -109,7 +109,7 @@ http.createServer(function (req, res) {
 	// Write out the headers
 	map_hash(headers, hitch(rreq, rreq.setHeader));
 
-	// Pipe the result from the remote proxy to the client
+	// Pipe the request from the real client (req) to the remote proxy (rreq)
 	req.pipe(rreq);
 
 	// Destroy the stream on error

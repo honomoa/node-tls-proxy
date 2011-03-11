@@ -87,17 +87,13 @@ https.createServer(https_options, function (req, res) {
 
 		res.writeHead(remote.statusCode, rheaders);
 
-		remote.on('data', function(d) {
-			res.write(d);
-		})
-		.on('end', function() {
-			console.log("Response end");
-			res.end();
-		})
-		.on('error', function() {
+		// Pipe all data from source (remote) to destination (res)
+		remote.pipe(res);
+
+		remote.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
-			// Don't forget to end the server's response stream
-			res.end();
+			// Don't forget to destroy the server's response stream
+			res.destroy();
 		});
 	});
 
@@ -110,13 +106,13 @@ https.createServer(https_options, function (req, res) {
 	// headers['accept-encoding'] = 'gzip,deflate';
 	map_hash(headers, hitch(rreq, rreq.setHeader));
 
-	req.on('data', function(d) {
-		rreq.write(d);
-	})
-	.on('end', function() {
-		console.log("Request end");
-		// End the remote request as well
-		rreq.end();
+	// Pipe the result from the actual host (rreq) to the local proxy (req)
+	req.pipe(rreq);
+
+	// Destroy the stream on error
+	req.on('error', function() {
+		console.log("Error sending data to client:", arguments);
+		res.destroy();
 	});
 
 }).listen(443);
