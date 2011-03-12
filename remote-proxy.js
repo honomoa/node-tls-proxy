@@ -72,13 +72,6 @@ https.createServer(https_options, function (req, res) {
 	// console.log("host:", host);
 	// console.log("url:", u);
 
-	function return_444() {
-		console.error("Error connecting:", arguments);
-		res.writeHead(444, "No Response");
-		res.end();
-		rreq.destroy();
-	}
-
 	// The remote request object
 	var rreq = http.request({
 		host: host, 
@@ -114,12 +107,19 @@ https.createServer(https_options, function (req, res) {
 			res.destroy();
 			rres.destroy();
 			rreq.destroy();
+			--np_req;
 		});
 	});
 
 	// console.log("RREQ:", rreq);
 
-	rreq.on('error', return_444);
+	rreq.on('error', function() {
+		console.error("Error connecting:", arguments);
+		res.end();
+		req.destroy();
+		rreq.destroy();
+		--np_req;
+	});
 
 	// Write out the headers.
 	// Set the "Accept-Encoding" header.
@@ -141,6 +141,7 @@ https.createServer(https_options, function (req, res) {
 		res.destroy();
 		req.destroy();
 		rreq.destroy();
+		--np_req;
 	});
 
 }).listen(443);
