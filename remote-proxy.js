@@ -68,6 +68,7 @@ https.createServer(https_options, function (req, res) {
 		console.error("Error connecting:", arguments);
 		res.writeHead(444, "No Response");
 		res.end();
+		rreq.destroy();
 	}
 
 	// The remote request object
@@ -94,6 +95,7 @@ https.createServer(https_options, function (req, res) {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
 			res.destroy();
+			rreq.destroy();
 		});
 	});
 

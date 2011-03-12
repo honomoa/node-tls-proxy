@@ -26,6 +26,7 @@ var https = require('https');
 var url   = require('url');
 
 var REMOTE_PROXY_HOST = "localhost";
+var REMOTE_PROXY_PORT = 443;
 
 function map_hash(m, mapper) {
 	var r = { };
@@ -48,12 +49,30 @@ process.on('uncaughtException', function (err) {
 var opts = require('tav').set();
 
 if (opts.remote) {
-	REMOTE_PROXY_HOST = opts.remote;
+	var h, p;
+	var hp = opts.remote.match(/([^:]+)(:(.+))?/);
+	REMOTE_PROXY_HOST = hp[1];
+	REMOTE_PROXY_PORT = parseInt(hp[3] || REMOTE_PROXY_PORT);
 }
+
+
+// Increase the number of sockets so that we don't choke on a few bad connections
+var agent = http.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
+agent.maxSockets = 16;
+
+setInterval(function() {
+	console.log("Request Queue:", agent.queue);
+}, 10000);
+
+var np_req = 0;
+
 
 http.createServer(function (req, res) {
 	// console.log(req);
 	// console.log("Request Headers:", req.headers);
+	++np_req;
+
+	console.log(np_req, "Requesting URL:", req.url);
 
 	var headers = req.headers;
 	var u       = url.parse(req.url);
@@ -73,7 +92,7 @@ http.createServer(function (req, res) {
 	// The remote request object
 	var rreq = https.request({
 		host: REMOTE_PROXY_HOST, 
-		port: 443, 
+		port: REMOTE_PROXY_PORT, 
 		path: u.pathname + search, 
 		method: req.method
 	}, function (remote) {
@@ -85,10 +104,16 @@ http.createServer(function (req, res) {
 		// Pipe all data from source (remote) to destination (res)
 		remote.pipe(res);
 
+		remote.on('end', function() {
+			--np_req;
+			console.log(np_req, "Received Complete Response for URL:", req.url);
+		});
+
 		remote.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
 			res.destroy();
+			remote.destroy();
 		});
 	});
 
@@ -96,6 +121,7 @@ http.createServer(function (req, res) {
 		console.log("Error connecting to remote proxy:", arguments);
 		res.writeHead(444, "No Response");
 		res.end();
+		rreq.destroy();
 	});
 
 	// Prevent cross domain referer leakage
@@ -119,3 +145,4 @@ http.createServer(function (req, res) {
 	});
 
 }).listen(8080);
+
