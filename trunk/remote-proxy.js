@@ -51,9 +51,15 @@ var https_options = {
 	cert: fs.readFileSync('./openSSL_keys/ryans-cert.pem')
 };
 
+var np_req = 0;
+
+
 https.createServer(https_options, function (req, res) {
 	// console.log(req);
 	// console.log("Request Headers:", req.headers);
+	++np_req;
+
+	console.log(np_req, "Requesting URL:", req.url);
 
 	var headers = req.headers;
 	var u       = url.parse(req.url);
@@ -90,6 +96,11 @@ https.createServer(https_options, function (req, res) {
 
 		// Pipe all data from source (remote) to destination (res)
 		remote.pipe(res);
+
+		remote.on('end', function() {
+			--np_req;
+			console.log(np_req, "Received Complete Response for URL:", req.url);
+		});
 
 		remote.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
