@@ -118,6 +118,7 @@ http.createServer(function (req, res) {
 			res.destroy();
 			pres.destroy();
 			preq.destroy();
+			--np_req;
 		});
 	});
 
@@ -126,6 +127,7 @@ http.createServer(function (req, res) {
 		res.writeHead(444, "No Response");
 		res.end();
 		preq.destroy();
+		--np_req;
 	});
 
 	// Prevent cross domain referer leakage
@@ -154,6 +156,7 @@ http.createServer(function (req, res) {
 		res.destroy();
 		req.destroy();
 		preq.destroy();
+		--np_req;
 	});
 
 }).listen(8080);
