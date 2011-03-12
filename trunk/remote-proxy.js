@@ -95,11 +95,15 @@ https.createServer(https_options, function (req, res) {
 		res.writeHead(remote.statusCode, rheaders);
 
 		// Pipe all data from source (remote) to destination (res)
-		remote.pipe(res);
+		// remote.pipe(res);
 
-		remote.on('end', function() {
+		remote.on('data', function(d) {
+			res.write(d);
+		})
+		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
+			res.end();
 		});
 
 		remote.on('error', function() {
