@@ -42,9 +42,11 @@ function hitch(obj, proc) {
 	};
 }
 
+/* Try to not catch unhandled exceptions in thi hope of tracking line numbers
 process.on('uncaughtException', function (err) {
 	console.log('(un)Caught exception: ', err);
 });
+*/
 
 var https_options = {
 	key: fs.readFileSync('./openSSL_keys/ryans-key.pem'), 
@@ -83,21 +85,21 @@ https.createServer(https_options, function (req, res) {
 		port: port, 
 		path: u.pathname + search, 
 		method: req.method
-	}, function (remote) {
-		// console.log("REMOTE:", remote);
-		var rheaders = remote.headers;
+	}, function (rres) {
+		// console.log("rres:", rres);
+		var rheaders = rres.headers;
 
 		// Remove the "Content-Encoding" header.
 		// if (rheaders['content-encoding']) {
 			// delete rheaders['content-encoding'];
 		// }
 
-		res.writeHead(remote.statusCode, rheaders);
+		res.writeHead(rres.statusCode, rheaders);
 
-		// Pipe all data from source (remote) to destination (res)
-		// remote.pipe(res);
+		// Pipe all data from source (rres) to destination (res)
+		// rres.pipe(res);
 
-		remote.on('data', function(d) {
+		rres.on('data', function(d) {
 			res.write(d);
 		})
 		.on('end', function() {
@@ -106,10 +108,11 @@ https.createServer(https_options, function (req, res) {
 			res.end();
 		});
 
-		remote.on('error', function() {
+		rres.on('error', function() {
 			console.log("Error getting HTTP response:", arguments);
 			// Don't forget to destroy the server's response stream
 			res.destroy();
+			rres.destroy();
 			rreq.destroy();
 		});
 	});
@@ -136,6 +139,7 @@ https.createServer(https_options, function (req, res) {
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
 		res.destroy();
+		req.destroy();
 		rreq.destroy();
 	});
 
