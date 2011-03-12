@@ -90,38 +90,42 @@ http.createServer(function (req, res) {
 	}
 
 	// The remote request object
-	var rreq = https.request({
+	var preq = https.request({
 		host: REMOTE_PROXY_HOST, 
 		port: REMOTE_PROXY_PORT, 
 		path: u.pathname + search, 
 		method: req.method
-	}, function (remote) {
-		// console.log("REMOTE:", remote);
-		var rheaders = remote.headers;
+	}, function (pres) {
+		// console.log("pres:", pres);
+		var rheaders = pres.headers;
 
-		res.writeHead(remote.statusCode, rheaders);
+		res.writeHead(pres.statusCode, rheaders);
 
-		// Pipe all data from source (remote) to destination (res)
-		remote.pipe(res);
-
-		remote.on('end', function() {
+		// Pipe all data from source (pres) to destination (res)
+		pres.on('data', function(d) {
+			res.write(d);
+		})
+		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
+			res.end();
 		});
 
-		remote.on('error', function() {
+		pres.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
+			req.destroy();
 			res.destroy();
-			remote.destroy();
+			pres.destroy();
+			preq.destroy();
 		});
 	});
 
-	rreq.on('error', function() {
+	preq.on('error', function() {
 		console.log("Error connecting to remote proxy:", arguments);
 		res.writeHead(444, "No Response");
 		res.end();
-		rreq.destroy();
+		preq.destroy();
 	});
 
 	// Prevent cross domain referer leakage
@@ -133,15 +137,23 @@ http.createServer(function (req, res) {
 	}
 
 	// Write out the headers
-	map_hash(headers, hitch(rreq, rreq.setHeader));
+	map_hash(headers, hitch(preq, preq.setHeader));
 
-	// Pipe the request from the real client (req) to the remote proxy (rreq)
-	req.pipe(rreq);
+	// Pipe the request from the real client (req) to the remote proxy (preq)
+	// req.pipe(preq);
+	req.on('data', function(d) {
+		preq.write(d);
+	})
+	.on('end', function() {
+		preq.end();
+	});
 
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
 		res.destroy();
+		req.destroy();
+		preq.destroy();
 	});
 
 }).listen(8080);
