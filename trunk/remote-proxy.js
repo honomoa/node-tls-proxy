@@ -46,7 +46,7 @@ function hitch(obj, proc) {
 
 /* Try to not catch unhandled exceptions in the hope of tracking line numbers */
 process.on('uncaughtException', function (err) {
-	console.log('(un)Caught exception: ', err);
+	console.log('(un)Caught exception: ', err.stack);
 });
 
 
