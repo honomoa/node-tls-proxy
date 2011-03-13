@@ -105,8 +105,8 @@ https.createServer(https_options, function (req, res) {
 			console.log("Error getting HTTP response:", arguments);
 			// Don't forget to destroy the server's response stream
 			res.destroy();
-			rres.destroy();
-			rreq.destroy();
+			// rres.destroy();
+			// rreq.destroy();
 			--np_req;
 		});
 	});
@@ -115,8 +115,8 @@ https.createServer(https_options, function (req, res) {
 
 	rreq.on('error', function() {
 		console.error("Error connecting:", arguments);
-		res.end();
-		req.destroy();
+		// res.end();
+		// req.destroy();
 		rreq.destroy();
 		--np_req;
 	});
@@ -138,8 +138,8 @@ https.createServer(https_options, function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		res.destroy();
-		req.destroy();
+		// res.destroy();
+		// req.destroy();
 		rreq.destroy();
 		--np_req;
 	});
