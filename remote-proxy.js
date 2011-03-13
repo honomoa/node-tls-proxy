@@ -55,6 +55,13 @@ var https_options = {
 	cert: fs.readFileSync('./openSSL_keys/ryans-cert.pem')
 };
 
+var opts = require('tav').set();
+
+if (opts.timeout) {
+	TIMEOUT_SEC = parseInt(opts.timeout < 60 ? 60 : opts.timeout);
+}
+
+
 var np_req = 0;
 
 

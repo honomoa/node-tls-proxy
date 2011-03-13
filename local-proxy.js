@@ -58,6 +58,10 @@ if (opts.remote) {
 	REMOTE_PROXY_PORT = parseInt(hp[3] || REMOTE_PROXY_PORT);
 }
 
+if (opts.timeout) {
+	TIMEOUT_SEC = parseInt(opts.timeout < 60 ? 60 : opts.timeout);
+}
+
 
 // Increase the number of sockets so that we don't choke on a few bad connections
 var agent = http.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
