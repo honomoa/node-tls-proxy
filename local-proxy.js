@@ -28,6 +28,8 @@ var url   = require('url');
 var REMOTE_PROXY_HOST = "localhost";
 var REMOTE_PROXY_PORT = 443;
 
+var TIMEOUT_SEC = 60;
+
 function map_hash(m, mapper) {
 	var r = { };
 	for (var k in m) {
@@ -44,6 +46,7 @@ function hitch(obj, proc) {
 
 process.on('uncaughtException', function (err) {
 	console.log('(un)Caught exception: ' + err);
+	console.log(err.stack);
 });
 
 var opts = require('tav').set();
@@ -79,6 +82,8 @@ http.createServer(function (req, res) {
 	var host    = headers['host'];
 	var search  = u.search || '';
 
+	var _terminated = false;
+
 	// console.log("url:", u);
 
 	// Reject the request if it is anything other than http://
@@ -88,6 +93,13 @@ http.createServer(function (req, res) {
 		res.end();
 		return;
 	}
+
+	// Create an interval object to timeout our connection if there is
+	// no data transfer happening for TIMEOUT_SEC second.
+	var to_interval = setInterval(function() {
+		preq.emit('error');
+		clearInterval(to_interval);
+	}, TIMEOUT_SEC * 1000);
 
 	// The remote request object
 	var preq = https.request({
@@ -108,26 +120,32 @@ http.createServer(function (req, res) {
 		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
+			clearInterval(to_interval);
 			res.end();
 		});
 
 		pres.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
-			req.destroy();
-			res.destroy();
-			pres.destroy();
-			preq.destroy();
-			--np_req;
+			if (!_terminated) {
+				req.destroy();
+				res.destroy();
+				pres.destroy();
+				preq.destroy();
+				--np_req;
+				_terminated = true;
+			}
 		});
 	});
 
 	preq.on('error', function() {
 		console.log("Error connecting to remote proxy:", arguments);
-		res.writeHead(444, "No Response");
-		res.end();
-		preq.destroy();
-		--np_req;
+		if (!_terminated) {
+			res.destroy();
+			preq.destroy();
+			--np_req;
+			_terminated = true;
+		}
 	});
 
 	// Prevent cross domain referer leakage
@@ -153,10 +171,13 @@ http.createServer(function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		res.destroy();
-		req.destroy();
-		preq.destroy();
-		--np_req;
+		if (!_terminated) {
+			res.destroy();
+			req.destroy();
+			preq.destroy();
+			--np_req;
+			_terminated = true;
+		}
 	});
 
 }).listen(8080);
