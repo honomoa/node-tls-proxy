@@ -61,7 +61,7 @@ if (opts.remote) {
 
 // Increase the number of sockets so that we don't choke on a few bad connections
 var agent = http.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
-agent.maxSockets = 16;
+agent.maxSockets = 32;
 
 setInterval(function() {
 	console.log("Request Queue:", agent.queue);
@@ -81,7 +81,6 @@ http.createServer(function (req, res) {
 	var u       = url.parse(req.url);
 	var host    = headers['host'];
 	var search  = u.search || '';
-
 	var _terminated = false;
 
 	// console.log("url:", u);
@@ -94,12 +93,32 @@ http.createServer(function (req, res) {
 		return;
 	}
 
-	// Create an interval object to timeout our connection if there is
+	// Create an timeout object to timeout our connection if there is
 	// no data transfer happening for TIMEOUT_SEC second.
-	var to_interval = setInterval(function() {
-		preq.emit('error');
-		clearInterval(to_interval);
-	}, TIMEOUT_SEC * 1000);
+	var to_interval = null;
+	
+	function reset_timeout() {
+		if (to_interval) {
+			clearTimeout(to_interval);
+		}
+
+		to_interval = setTimeout(function() {
+			preq.emit('error');
+		}, TIMEOUT_SEC * 1000);
+	}
+
+	reset_timeout();
+
+	function terminate_request(streams) {
+		if (!_terminated) {
+			for (var i = 0; i < streams.length; ++i) {
+				streams[i].destroy();
+			}
+			--np_req;
+			_terminated = true;
+			clearTimeout(to_interval);
+		}
+	}
 
 	// The remote request object
 	var preq = https.request({
@@ -116,36 +135,25 @@ http.createServer(function (req, res) {
 		// Pipe all data from source (pres) to destination (res)
 		pres.on('data', function(d) {
 			res.write(d);
+			reset_timeout();
 		})
 		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
-			clearInterval(to_interval);
+			clearTimeout(to_interval);
 			res.end();
 		});
 
 		pres.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
-			if (!_terminated) {
-				req.destroy();
-				res.destroy();
-				pres.destroy();
-				preq.destroy();
-				--np_req;
-				_terminated = true;
-			}
+			terminate_request([req, res, pres, preq]);
 		});
 	});
 
 	preq.on('error', function() {
 		console.log("Error connecting to remote proxy:", arguments);
-		if (!_terminated) {
-			res.destroy();
-			preq.destroy();
-			--np_req;
-			_terminated = true;
-		}
+		terminate_request([res, preq]);
 	});
 
 	// Prevent cross domain referer leakage
@@ -163,6 +171,7 @@ http.createServer(function (req, res) {
 	// req.pipe(preq);
 	req.on('data', function(d) {
 		preq.write(d);
+		reset_timeout();
 	})
 	.on('end', function() {
 		preq.end();
@@ -171,13 +180,7 @@ http.createServer(function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		if (!_terminated) {
-			res.destroy();
-			req.destroy();
-			preq.destroy();
-			--np_req;
-			_terminated = true;
-		}
+		terminate_request([res, req, preq]);
 	});
 
 }).listen(8080);

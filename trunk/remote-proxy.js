@@ -27,6 +27,8 @@ var url   = require('url');
 var fs    = require('fs');
 var dns   = require('dns');
 
+var TIMEOUT_SEC = 60;
+
 
 function map_hash(m, mapper) {
 	var r = { };
@@ -68,9 +70,41 @@ https.createServer(https_options, function (req, res) {
 	var host    = headers['host'];
 	var port    = u.port || 80;
 	var search  = u.search || '';
+	var _terminated = false;
 
 	// console.log("host:", host);
 	// console.log("url:", u);
+
+	// Create an timeout object to timeout our connection if there is
+	// no data transfer happening for TIMEOUT_SEC second.
+	var to_interval = null;
+	
+
+	/* Reset the timeout so that we start counting once again after
+	 * any activity has occurred.
+	 */
+	function reset_timeout() {
+		if (to_interval) {
+			clearTimeout(to_interval);
+		}
+
+		to_interval = setTimeout(function() {
+			preq.emit('error');
+		}, TIMEOUT_SEC * 1000);
+	}
+
+	reset_timeout();
+
+	function terminate_request(streams) {
+		if (!_terminated) {
+			for (var i = 0; i < streams.length; ++i) {
+				streams[i].destroy();
+			}
+			--np_req;
+			_terminated = true;
+			clearTimeout(to_interval);
+		}
+	}
 
 	// The remote request object
 	var rreq = http.request({
@@ -94,20 +128,19 @@ https.createServer(https_options, function (req, res) {
 
 		rres.on('data', function(d) {
 			res.write(d);
+			reset_timeout();
 		})
 		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
+			clearTimeout(to_interval);
 			res.end();
 		});
 
 		rres.on('error', function() {
 			console.log("Error getting HTTP response:", arguments);
 			// Don't forget to destroy the server's response stream
-			res.destroy();
-			// rres.destroy();
-			// rreq.destroy();
-			--np_req;
+			terminate_request([res]);
 		});
 	});
 
@@ -115,10 +148,7 @@ https.createServer(https_options, function (req, res) {
 
 	rreq.on('error', function() {
 		console.error("Error connecting:", arguments);
-		// res.end();
-		// req.destroy();
-		rreq.destroy();
-		--np_req;
+		terminate_request([rreq]);
 	});
 
 	// Write out the headers.
@@ -130,6 +160,7 @@ https.createServer(https_options, function (req, res) {
 	// req.pipe(rreq);
 	req.on('data', function(d) {
 		rreq.write(d);
+		reset_timeout();
 	})
 	.on('end', function() {
 		rreq.end();
@@ -138,10 +169,7 @@ https.createServer(https_options, function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		// res.destroy();
-		// req.destroy();
-		rreq.destroy();
-		--np_req;
+		terminate_request([rreq]);
 	});
 
 }).listen(443);
