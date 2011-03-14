@@ -28,7 +28,7 @@ var url   = require('url');
 var REMOTE_PROXY_HOST = "localhost";
 var REMOTE_PROXY_PORT = 443;
 
-var TIMEOUT_SEC = 60;
+var TIMEOUT_SEC = 120;
 
 function map_hash(m, mapper) {
 	var r = { };
