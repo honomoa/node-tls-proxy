@@ -99,7 +99,7 @@ https.createServer(https_options, function (req, res) {
 		}
 
 		to_interval = setTimeout(function() {
-			preq.emit('error');
+			rreq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
 
