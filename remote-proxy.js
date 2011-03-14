@@ -27,7 +27,7 @@ var url   = require('url');
 var fs    = require('fs');
 var dns   = require('dns');
 
-var TIMEOUT_SEC = 60;
+var TIMEOUT_SEC = 120;
 
 
 function map_hash(m, mapper) {
@@ -85,7 +85,10 @@ https.createServer(https_options, function (req, res) {
 	// Create an timeout object to timeout our connection if there is
 	// no data transfer happening for TIMEOUT_SEC second.
 	var to_interval = null;
-	
+
+	var agent = http.getAgent(host, port);
+	agent.maxSockets = 32;
+
 
 	/* Reset the timeout so that we start counting once again after
 	 * any activity has occurred.
