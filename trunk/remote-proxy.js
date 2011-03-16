@@ -144,6 +144,7 @@ https.createServer(https_options, function (req, res) {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
 			clearTimeout(to_interval);
+			_terminated = true;
 			res.end();
 		});
 
