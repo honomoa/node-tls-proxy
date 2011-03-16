@@ -115,12 +115,13 @@ http.createServer(function (req, res) {
 
 	function terminate_request(streams) {
 		if (!_terminated) {
-			for (var i = 0; i < streams.length; ++i) {
-				streams[i].destroy();
-			}
-			--np_req;
 			_terminated = true;
 			clearTimeout(to_interval);
+			--np_req;
+
+			streams.forEach(function(stream) {
+				stream.destroy();
+			});
 		}
 	}
 

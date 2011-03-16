@@ -107,12 +107,13 @@ https.createServer(https_options, function (req, res) {
 
 	function terminate_request(streams) {
 		if (!_terminated) {
-			for (var i = 0; i < streams.length; ++i) {
-				streams[i].destroy();
-			}
-			--np_req;
 			_terminated = true;
+			--np_req;
 			clearTimeout(to_interval);
+
+			streams.forEach(function(stream) {
+				stream.destroy();
+			});
 		}
 	}
 
