@@ -158,7 +158,7 @@ https.createServer(https_options, function (req, res) {
 
 	rreq.on('error', function() {
 		console.error("Error connecting:", arguments);
-		terminate_request([rreq]);
+		terminate_request([res]);
 	});
 
 	// Write out the headers.
