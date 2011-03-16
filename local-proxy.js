@@ -106,7 +106,8 @@ http.createServer(function (req, res) {
 		unset_timeout();
 
 		to_interval = setTimeout(function() {
-			preq.end();
+			preq.destroy();
+			preq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
 
@@ -152,6 +153,8 @@ http.createServer(function (req, res) {
 		.on('end', function() {
 			if (_terminated) {
 				throw "Calling end on a terminated request";
+				console.error("Calling END on a terminated request");
+				process.exit();
 			}
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
