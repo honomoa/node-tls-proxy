@@ -121,7 +121,6 @@ https.createServer(https_options, function (req, res) {
 			streams.forEach(function(stream) {
 				// stream.destroy();
 				stream.emit('error');
-				stream.emit('error');
 			});
 		}
 	}
