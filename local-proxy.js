@@ -77,7 +77,6 @@ var np_req = 0;
 http.createServer(function (req, res) {
 	// console.log(req);
 	// console.log("Request Headers:", req.headers);
-	++np_req;
 
 	console.log(np_req, "Requesting URL:", req.url);
 
@@ -97,18 +96,26 @@ http.createServer(function (req, res) {
 		return;
 	}
 
+	++np_req;
+
 	// Create an timeout object to timeout our connection if there is
 	// no data transfer happening for TIMEOUT_SEC second.
 	var to_interval = null;
 	
 	function reset_timeout() {
-		if (to_interval) {
-			clearTimeout(to_interval);
-		}
+		unset_timeout();
 
 		to_interval = setTimeout(function() {
-			preq.emit('error');
+			preq.end();
 		}, TIMEOUT_SEC * 1000);
+	}
+
+	function unset_timeout() {
+		// console.log("clearing Timeout for:", host + req.url);
+		if (to_interval) {
+			clearTimeout(to_interval);
+			to_interval = null;
+		}
 	}
 
 	reset_timeout();
@@ -116,8 +123,8 @@ http.createServer(function (req, res) {
 	function terminate_request(streams) {
 		if (!_terminated) {
 			_terminated = true;
-			clearTimeout(to_interval);
 			--np_req;
+			clearTimeout(to_interval);
 
 			streams.forEach(function(stream) {
 				stream.destroy();
@@ -143,6 +150,9 @@ http.createServer(function (req, res) {
 			reset_timeout();
 		})
 		.on('end', function() {
+			if (_terminated) {
+				throw "Calling end on a terminated request";
+			}
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", req.url);
 			clearTimeout(to_interval);
