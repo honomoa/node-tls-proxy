@@ -112,7 +112,8 @@ https.createServer(https_options, function (req, res) {
 			clearTimeout(to_interval);
 
 			streams.forEach(function(stream) {
-				stream.destroy();
+				// stream.destroy();
+				stream.emit('error');
 			});
 		}
 	}
