@@ -94,22 +94,29 @@ https.createServer(https_options, function (req, res) {
 	 * any activity has occurred.
 	 */
 	function reset_timeout() {
-		if (to_interval) {
-			clearTimeout(to_interval);
-		}
+		unset_timeout();
 
 		to_interval = setTimeout(function() {
 			rreq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
 
+	function unset_timeout() {
+		console.log("clearing Timeout for:", host + req.url);
+		if (to_interval) {
+			clearTimeout(to_interval);
+			to_interval = null;
+		}
+	}
+
 	reset_timeout();
+
 
 	function terminate_request(streams) {
 		if (!_terminated) {
 			_terminated = true;
 			--np_req;
-			clearTimeout(to_interval);
+			unset_timeout();
 
 			streams.forEach(function(stream) {
 				// stream.destroy();
@@ -145,8 +152,7 @@ https.createServer(https_options, function (req, res) {
 		.on('end', function() {
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", host + req.url);
-			clearTimeout(to_interval);
-			_terminated = true;
+			unset_timeout();
 			res.end();
 		});
 
