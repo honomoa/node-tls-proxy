@@ -70,7 +70,7 @@ https.createServer(https_options, function (req, res) {
 	// console.log("Request Headers:", req.headers);
 	++np_req;
 
-	console.log(np_req, "Requesting URL:", req.url);
+	console.log(np_req, "Requesting URL:", host + req.url);
 
 	var headers = req.headers;
 	var u       = url.parse(req.url);
@@ -144,7 +144,7 @@ https.createServer(https_options, function (req, res) {
 		})
 		.on('end', function() {
 			--np_req;
-			console.log(np_req, "Received Complete Response for URL:", req.url);
+			console.log(np_req, "Received Complete Response for URL:", host + req.url);
 			clearTimeout(to_interval);
 			_terminated = true;
 			res.end();
