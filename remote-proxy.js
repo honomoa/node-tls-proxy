@@ -94,6 +94,7 @@ https.createServer(https_options, function (req, res) {
 	 * any activity has occurred.
 	 */
 	function reset_timeout() {
+		console.log("Resetting timeout for URL:", host + req.url);
 		unset_timeout();
 
 		to_interval = setTimeout(function() {
