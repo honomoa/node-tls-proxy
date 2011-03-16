@@ -151,7 +151,7 @@ http.createServer(function (req, res) {
 		pres.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
-			terminate_request([req, res, pres, preq]);
+			terminate_request([res, pres]);
 		});
 	});
 
@@ -184,7 +184,7 @@ http.createServer(function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		terminate_request([res, req, preq]);
+		terminate_request([res, preq]);
 	});
 
 }).listen(8080);
