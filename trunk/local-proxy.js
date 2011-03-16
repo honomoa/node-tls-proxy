@@ -151,13 +151,13 @@ http.createServer(function (req, res) {
 		pres.on('error', function() {
 			console.log("Error getting HTTPS response:", arguments);
 			// Don't forget to destroy the server's response stream
-			terminate_request([res, pres]);
+			terminate_request([res]);
 		});
 	});
 
 	preq.on('error', function() {
 		console.log("Error connecting to remote proxy:", arguments);
-		terminate_request([res, preq]);
+		terminate_request([res]);
 	});
 
 	// Prevent cross domain referer leakage
@@ -184,7 +184,7 @@ http.createServer(function (req, res) {
 	// Destroy the stream on error
 	req.on('error', function() {
 		console.log("Error sending data to client:", arguments);
-		terminate_request([res, preq]);
+		terminate_request([preq]);
 	});
 
 }).listen(8080);
