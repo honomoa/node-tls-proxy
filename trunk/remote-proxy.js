@@ -68,9 +68,6 @@ var np_req = 0;
 https.createServer(https_options, function (req, res) {
 	// console.log(req);
 	// console.log("Request Headers:", req.headers);
-	++np_req;
-
-	console.log(np_req, "Requesting URL:", host + req.url);
 
 	var headers = req.headers;
 	var u       = url.parse(req.url);
@@ -78,6 +75,11 @@ https.createServer(https_options, function (req, res) {
 	var port    = u.port || 80;
 	var search  = u.search || '';
 	var _terminated = false;
+
+	++np_req;
+
+	console.log(np_req, "Requesting URL:", host + req.url);
+
 
 	// console.log("host:", host);
 	// console.log("url:", u);
