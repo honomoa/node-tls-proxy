@@ -100,6 +100,7 @@ https.createServer(https_options, function (req, res) {
 		unset_timeout();
 
 		to_interval = setTimeout(function() {
+			rreq.destroy();
 			rreq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
@@ -122,8 +123,7 @@ https.createServer(https_options, function (req, res) {
 			unset_timeout();
 
 			streams.forEach(function(stream) {
-				// stream.destroy();
-				stream.end();
+				stream.destroy();
 			});
 		}
 	}
