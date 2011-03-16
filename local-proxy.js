@@ -78,8 +78,6 @@ http.createServer(function (req, res) {
 	// console.log(req);
 	// console.log("Request Headers:", req.headers);
 
-	console.log(np_req, "Requesting URL:", req.url);
-
 	var headers = req.headers;
 	var u       = url.parse(req.url);
 	var host    = headers['host'];
@@ -97,6 +95,8 @@ http.createServer(function (req, res) {
 	}
 
 	++np_req;
+
+	console.log(np_req, "Requesting URL:", req.url);
 
 	// Create an timeout object to timeout our connection if there is
 	// no data transfer happening for TIMEOUT_SEC second.
