@@ -27,7 +27,7 @@ var url   = require('url');
 var fs    = require('fs');
 var dns   = require('dns');
 
-var TIMEOUT_SEC = 120;
+var TIMEOUT_SEC = 80;
 
 
 function map_hash(m, mapper) {
@@ -100,8 +100,8 @@ https.createServer(https_options, function (req, res) {
 		unset_timeout();
 
 		to_interval = setTimeout(function() {
+			console.error("Timing out request:", host + req.url);
 			rreq.destroy();
-			rreq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
 
@@ -118,8 +118,9 @@ https.createServer(https_options, function (req, res) {
 
 	function terminate_request(streams) {
 		if (!_terminated) {
-			_terminated = true;
 			--np_req;
+			console.error(np_req, "Hard terminating request:", req.url);
+			_terminated = true;
 			unset_timeout();
 
 			streams.forEach(function(stream) {
@@ -153,9 +154,9 @@ https.createServer(https_options, function (req, res) {
 			reset_timeout();
 		})
 		.on('end', function() {
+			unset_timeout();
 			--np_req;
 			console.log(np_req, "Received Complete Response for URL:", host + req.url);
-			unset_timeout();
 			res.end();
 		});
 

@@ -28,7 +28,7 @@ var url   = require('url');
 var REMOTE_PROXY_HOST = "localhost";
 var REMOTE_PROXY_PORT = 443;
 
-var TIMEOUT_SEC = 120;
+var TIMEOUT_SEC = 90;
 
 function map_hash(m, mapper) {
 	var r = { };
@@ -106,8 +106,8 @@ http.createServer(function (req, res) {
 		unset_timeout();
 
 		to_interval = setTimeout(function() {
+			console.error("Timing out request:", req.url);
 			preq.destroy();
-			preq.emit('error');
 		}, TIMEOUT_SEC * 1000);
 	}
 
@@ -123,8 +123,9 @@ http.createServer(function (req, res) {
 
 	function terminate_request(streams) {
 		if (!_terminated) {
-			_terminated = true;
 			--np_req;
+			console.error(np_req, "Hard terminating request:", req.url);
+			_terminated = true;
 			clearTimeout(to_interval);
 
 			streams.forEach(function(stream) {
