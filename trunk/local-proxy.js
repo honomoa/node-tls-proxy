@@ -64,7 +64,7 @@ if (opts.timeout) {
 
 
 // Increase the number of sockets so that we don't choke on a few bad connections
-var agent = http.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
+var agent = https.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
 agent.maxSockets = 32;
 
 setInterval(function() {
