@@ -88,10 +88,6 @@ https.createServer(https_options, function (req, res) {
 	// no data transfer happening for TIMEOUT_SEC second.
 	var to_interval = null;
 
-	var agent = http.getAgent(host, port);
-	agent.maxSockets = 32;
-
-
 	/* Reset the timeout so that we start counting once again after
 	 * any activity has occurred.
 	 */
@@ -131,10 +127,11 @@ https.createServer(https_options, function (req, res) {
 
 	// The remote request object
 	var rreq = http.request({
-		host: host, 
-		port: port, 
-		path: u.pathname + search, 
-		method: req.method
+	    host: host, 
+	    port: port, 
+	    path: u.pathname + search, 
+	    method: req.method, 
+	    agent: false
 	}, function (rres) {
 		// console.log("rres:", rres);
 		var rheaders = rres.headers;

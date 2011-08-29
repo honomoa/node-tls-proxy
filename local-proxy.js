@@ -63,12 +63,8 @@ if (opts.timeout) {
 }
 
 
-// Increase the number of sockets so that we don't choke on a few bad connections
-var agent = https.getAgent(REMOTE_PROXY_HOST, REMOTE_PROXY_PORT);
-agent.maxSockets = 32;
-
 setInterval(function() {
-	console.log("Request Queue:", agent.queue);
+    console.log("Request Queue:", agent.queue);
 }, 10000);
 
 var np_req = 0;
@@ -136,10 +132,11 @@ http.createServer(function (req, res) {
 
 	// The remote request object
 	var preq = https.request({
-		host: REMOTE_PROXY_HOST, 
-		port: REMOTE_PROXY_PORT, 
-		path: u.pathname + search, 
-		method: req.method
+	    host: REMOTE_PROXY_HOST, 
+	    port: REMOTE_PROXY_PORT, 
+	    path: u.pathname + search, 
+	    method: req.method, 
+	    agent: false
 	}, function (pres) {
 		// console.log("pres:", pres);
 		var rheaders = pres.headers;
